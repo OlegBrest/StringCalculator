@@ -16,6 +16,10 @@ namespace StringCalculator
 
         char[] opers = new char[] { '+', '-', '*', '/' };
         char[] prior = new char[] { '(', ')' };
+        /// <summary>
+        /// Разделитель дробной части
+        /// </summary>
+        string dec_sep = Thread.CurrentThread.CurrentCulture.NumberFormat.NumberDecimalSeparator;
         public Form1()
         {
             InitializeComponent();
@@ -24,46 +28,83 @@ namespace StringCalculator
         private void calcButton_Click(object sender, EventArgs e)
         {
             string inp = inputTextBox.Text;
+            inp = PriorCorrection(inp);
             if (corrected(inp))
             {
                 outputTextBox.Text = StartCalulating(inp).ToString();
             }
         }
 
-
         private bool corrected(string txt)
         {
             int skobscount = 0;
             int textlenght = txt.Length;
+            if (opers.Any(s => s == txt[textlenght - 1]))
+            {
+                outputTextBox.Text=("Перепроверь последний оператор");
+                return false;
+            }
+            if (txt[textlenght - 1] == dec_sep[0])
+            {
+                outputTextBox.Text=("Перепроверь последнее дробное число");
+                return false;
+            }
             if (textlenght > 0)
             {
                 for (int i = 0; i < textlenght; i++)
                 {
-                    if ((i + 1) < textlenght && (opers.Any(s => s == txt[i + 1]) && opers.Any(s => s == txt[i])))
+                    if ((i + 1) < textlenght)
                     {
-                        MessageBox.Show("Перепроверь операторы");
-                        return false;
+                        if ((opers.Any(s => s == txt[i + 1]) || (txt[i + 1] == ')')) && opers.Any(s => s == txt[i]))
+                        {
+                            outputTextBox.Text=("Перепроверь операторы");
+                            return false;
+                        }
+                        if (((txt[i] == dec_sep[0]) && (!Char.IsDigit(txt[i + 1]))) || ((txt[i+1] == dec_sep[0]) && (!Char.IsDigit(txt[i]))))
+                        {
+                            outputTextBox.Text=("Перепроверь разделители дробной части");
+                            return false;
+                        }
                     }
                     if (txt[i] == '(') skobscount++;
                     if (txt[i] == ')') skobscount--;
                     if (skobscount < 0)
                     {
-                        MessageBox.Show("Проверьте закрывающие скобки");
+                        outputTextBox.Text=("Проверьте закрывающие скобки");
                         return false;
                     }
                 }
                 if (skobscount > 0)
                 {
-                    MessageBox.Show("Проверьте открывающие скобки");
+                    outputTextBox.Text=("Проверьте открывающие скобки");
                     return false;
                 }
             }
-            if (opers.Any(s => s == txt[textlenght - 1]))
-            {
-                MessageBox.Show("Перепроверь операторы");
-                return false;
-            }
             return true;
+        }
+
+        private string PriorCorrection(string inputString)
+        {
+            string tmp = "";
+            string resval = "";
+            tmp = inputString.Replace(")(", ")*(");
+            int textlenght = tmp.Length;
+            for (int i = 0; i < textlenght; i++)
+            {
+                resval += tmp[i];
+                if ((i + 1) < textlenght)
+                {
+                    if (char.IsDigit(tmp[i]) && (tmp[i + 1] == '('))
+                    {
+                        resval += '*';
+                    }
+                    if (char.IsDigit(tmp[i+1]) && (tmp[i] == ')'))
+                    {
+                        resval += '*';
+                    }
+                }
+            }
+            return resval;
         }
 
         /// <summary>
@@ -186,8 +227,7 @@ namespace StringCalculator
         private void inputTextBox_KeyPress(object sender, KeyPressEventArgs e)
         {
             char keypressed = e.KeyChar;
-            string dec_sep = Thread.CurrentThread.CurrentCulture.NumberFormat.NumberDecimalSeparator;
-            if (!Char.IsDigit(keypressed)&&!opers.Any(x=>x==keypressed) && !prior.Any(x => x == keypressed)&&(keypressed!=dec_sep[0])&&(e.KeyChar!=(char)Keys.Back))
+            if (!Char.IsDigit(keypressed) && !opers.Any(x => x == keypressed) && !prior.Any(x => x == keypressed) && (keypressed != dec_sep[0]) && (e.KeyChar != (char)Keys.Back))
             {
                 e.Handled = true;
             }
