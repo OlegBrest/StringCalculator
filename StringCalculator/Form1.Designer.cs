@@ -45,6 +45,7 @@ namespace StringCalculator
             this.inputTextBox.Name = "inputTextBox";
             this.inputTextBox.Size = new System.Drawing.Size(296, 26);
             this.inputTextBox.TabIndex = 0;
+            this.inputTextBox.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.inputTextBox_KeyPress);
             // 
             // label1
             // 

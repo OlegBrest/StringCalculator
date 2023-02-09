@@ -5,6 +5,7 @@ using System.Data;
 using System.Drawing;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -75,7 +76,7 @@ namespace StringCalculator
             string workingString = inpText;
             bool isSplitted = false;
             double result = double.NaN;
-            if (double.TryParse(inpText, out result))
+            if (double.TryParse(workingString, out result))
                 return result;
             else
             {
@@ -87,41 +88,53 @@ namespace StringCalculator
                 workingString = PriorCalc(workingString);
             }
             // работа с операторами
-            foreach (char oper in opers)
+            if (workingString.Intersect(opers).Count() > 0)
             {
-                if (!isSplitted)
+                foreach (char oper in opers)
                 {
+                    if (!isSplitted)
+                    {
 
-                    string[] substrings = workingString.Split(oper);
-                    int sslenght = substrings.Count();
-                    if (sslenght > 1) isSplitted = true;
-                    if ((sslenght > 1) && (result.Equals(double.NaN)))
-                    {
-                        result = StartCalulating(substrings[0]);
-                    }
-                    if (!result.Equals(double.NaN))
-                    {
-                        for (int sstr = 1; sstr < sslenght; sstr++)
+                        string[] substrings = workingString.Split(oper);
+                        int sslenght = substrings.Count();
+                        if (sslenght > 1) isSplitted = true;
+                        if ((sslenght > 1) && (result.Equals(double.NaN)))
                         {
-                            string str = substrings[sstr];
-                            if (oper == '+')
+                            result = StartCalulating(substrings[0]);
+                        }
+                        if (!result.Equals(double.NaN))
+                        {
+                            for (int sstr = 1; sstr < sslenght; sstr++)
                             {
-                                result += StartCalulating(str);
-                            }
-                            if (oper == '-')
-                            {
-                                result -= StartCalulating(str);
-                            }
-                            if (oper == '*')
-                            {
-                                result *= StartCalulating(str);
-                            }
-                            if (oper == '/')
-                            {
-                                result /= StartCalulating(str);
+                                string str = substrings[sstr];
+                                if (oper == '+')
+                                {
+                                    result += StartCalulating(str);
+                                }
+                                if (oper == '-')
+                                {
+                                    result -= StartCalulating(str);
+                                }
+                                if (oper == '*')
+                                {
+                                    result *= StartCalulating(str);
+                                }
+                                if (oper == '/')
+                                {
+                                    result /= StartCalulating(str);
+                                }
                             }
                         }
                     }
+                }
+            }
+            else
+            {
+                if (double.TryParse(workingString, out result))
+                    return result;
+                else
+                {
+                    result = double.NaN;
                 }
             }
             return result;
@@ -132,7 +145,7 @@ namespace StringCalculator
         /// </summary>
         /// <param name="inpText">входная строка</param>
         /// <returns></returns>
-        private string PriorCalc (string inpText)
+        private string PriorCalc(string inpText)
         {
             string retval = "";
             bool priorFinded = false;
@@ -168,6 +181,16 @@ namespace StringCalculator
                 }
             }
             return retval;
+        }
+
+        private void inputTextBox_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            char keypressed = e.KeyChar;
+            string dec_sep = Thread.CurrentThread.CurrentCulture.NumberFormat.NumberDecimalSeparator;
+            if (!Char.IsDigit(keypressed)&&!opers.Any(x=>x==keypressed) && !prior.Any(x => x == keypressed)&&(keypressed!=dec_sep[0])&&(e.KeyChar!=(char)Keys.Back))
+            {
+                e.Handled = true;
+            }
         }
     }
 }
