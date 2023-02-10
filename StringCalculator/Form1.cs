@@ -29,9 +29,12 @@ namespace StringCalculator
         {
             string inp = inputTextBox.Text;
             inp = PriorCorrection(inp);
-            if (corrected(inp))
+            if (inp != "")
             {
-                outputTextBox.Text = StartCalulating(inp).ToString();
+                if (corrected(inp))
+                {
+                    outputTextBox.Text = StartCalulating(inp).ToString();
+                }
             }
         }
 
@@ -88,6 +91,7 @@ namespace StringCalculator
             string tmp = "";
             string resval = "";
             tmp = inputString.Replace(")(", ")*(");
+            tmp = tmp.Replace("(-", "(0-");
             int textlenght = tmp.Length;
             for (int i = 0; i < textlenght; i++)
             {
@@ -117,7 +121,7 @@ namespace StringCalculator
             string workingString = inpText;
             bool isSplitted = false;
             double result = double.NaN;
-            if (double.TryParse(workingString, out result))
+            if (double.TryParse(workingString.Replace("#","-"), out result))
                 return result;
             else
             {
@@ -127,15 +131,20 @@ namespace StringCalculator
             if (inpText.Intersect(prior).Count() > 0)
             {
                 workingString = PriorCalc(workingString);
+                StartCalulating(workingString);
             }
             // работа с операторами
-            if (workingString.Intersect(opers).Count() > 0)
+            if ((workingString.Intersect(opers).Count() > 0) &&(result.Equals(double.NaN)))
             {
                 foreach (char oper in opers)
                 {
                     if (!isSplitted)
                     {
-
+                        if (workingString[0] == '-') workingString = "#" + workingString.Substring(1);
+                        workingString = workingString.Replace("--", "-#");
+                        workingString = workingString.Replace("+-", "+#");
+                        workingString = workingString.Replace("*-", "*#");
+                        workingString = workingString.Replace("/-", "/#");
                         string[] substrings = workingString.Split(oper);
                         int sslenght = substrings.Count();
                         if (sslenght > 1) isSplitted = true;
@@ -169,15 +178,7 @@ namespace StringCalculator
                     }
                 }
             }
-            else
-            {
-                if (double.TryParse(workingString, out result))
-                    return result;
-                else
-                {
-                    result = double.NaN;
-                }
-            }
+            
             return result;
         }
 
@@ -199,18 +200,39 @@ namespace StringCalculator
                 {
                     if (inpText[i] == '(')
                     {
-                        if (!priorFinded) i++;
+                        if (!priorFinded)
+                        {
+                            i++;
+                            if (inpText[i] == '(') skobscount++;
+                        }
                         priorFinded = true;
                         skobscount++;
+                        
                     }
                     if (inpText[i] == ')') skobscount--;
-
-                    if (!priorFinded) retval += inpText[i];
+                    if (!priorFinded)
+                    {
+                        if ((inpText[i] == '-') && (i == 0))
+                        {
+                            retval += '#';
+                        }
+                            else
+                        {
+                            retval += inpText[i];
+                        }
+                    }
                     if (priorFinded)
                     {
                         if (skobscount > 0)
                         {
-                            priortext += inpText[i];
+                            if ((inpText[i] == '-') && (i == 0))
+                            {
+                                priortext += '#';
+                            }
+                            else
+                            {
+                                priortext += inpText[i];
+                            }
                         }
                         else
                         {
